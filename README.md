@@ -13,7 +13,7 @@
 
 <h2>Twilio</h2>
 The program uses Twilio to send and receive text messages.
-In order for messaging to work, the following environment variables need to be set up:
+In order for messaging to work, the following environment variables need to be set up in .bashrc file:
 TWILIO_ACCOUNT_SID - credential to log into Twilio account
 TWILIO_AUTH_TOKEN - credential to log into Twilio account
 TWILIO_PHONE_NUMBER - main Twilio phone number used to send messages
