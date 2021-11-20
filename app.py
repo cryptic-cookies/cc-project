@@ -4,8 +4,6 @@ from flask import Flask, request
 from apscheduler.schedulers.background import BackgroundScheduler
 
 import os
-import time
-import threading
 import serial
 import pygame
 
@@ -39,7 +37,7 @@ def read_reply_message():
         msg_text = request.form.get('Body')
         from_number = request.form.get('From')
         
-        #TODO here we can add other responses
+        #here we can add other responses
         if from_number == USER_PHONE_NUMBER and msg_text == OK_RESPONSE_TEXT:
             turn_off_alarm()
             resp = MessagingResponse()
@@ -53,14 +51,18 @@ def index():
 
 ################### functions ###############
 
+def check_alarm():
+    #print('beep beep') 
+    global alarm_on
+    if alarm_on == True:
+        sound_alarm()
+
 def sound_alarm():
-    print('beep beep') 
-    pygame.mixer.init()
-    pygame.mixer.music.load(ALARM_FILE_NAME)
     pygame.mixer.music.play()
 
 def turn_off_alarm():
     print ('Turning off alarm...')
+    global alarm_on
     alarm_on = False
 
 def send_sms():
@@ -92,19 +94,32 @@ def check_sensor():
     if current_weight - new_weight > WEIGHT_DIFF_THRESHOLD:
         send_sms() 
         alarm_on = True
-        sound_alarm()
     current_weight = new_weight
         
 #### main program ####
 if __name__ == '__main__':
-    #start scheduler
-    sched = BackgroundScheduler(daemon=True)
-    sched.add_job(check_sensor, 'interval', seconds=3)
-    sched.start()
-    
-    #start web server
-    app.run(debug=False, port=5000, host='0.0.0.0')
 
+    pygame.mixer.init()
+    pygame.mixer.music.load(ALARM_FILE_NAME)
+
+    try:
+        #start scheduler
+        sched = BackgroundScheduler(daemon=True)
+        #check weight every 3 seconds
+        sched.add_job(check_sensor, 'interval', seconds=3)
+        # check if alarm should be on, current alarm file is 11 sec, so check every 12
+        sched.add_job(check_alarm, 'interval', seconds=12)
+        sched.start()
+
+   
+    
+        #start web server
+        app.run(debug=False, port=5000, host='0.0.0.0')
+
+    except KeyboardInterrupt:
+        print('Exiting')
+        sched.shutdown()
+        pygame.mixer.quit()
 
 
 
