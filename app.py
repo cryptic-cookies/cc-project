@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import os
 import serial
 import pygame
+import sys
 
 def get_env_var(key):
     if key in os.environ:
@@ -17,6 +18,8 @@ def get_env_var(key):
 ACCOUNT_SID = get_env_var('TWILIO_ACCOUNT_SID') #os.environ['TWILIO_ACCOUNT_SID']
 AUTH_TOKEN = get_env_var('TWILIO_AUTH_TOKEN') #os.environ['TWILIO_AUTH_TOKEN']
 TWILIO_PHONE_NUMBER = get_env_var('TWILIO_PHONE_NUMBER') #os.environ['TWILIO_PHONE_NUMBER']
+TWILIO_PN_SID = 'PN68a20eb7b497b1ea22d13d1dd5936eea'
+TWILIO_DEFAULT_URL = 'https://demo.twilio.com/welcome/sms/reply/'
 USER_PHONE_NUMBER = get_env_var('OWNER_PHONE_NUMBER') #os.environ['OWNER_PHONE_NUMBER']
 WEIGHT_DECREASED_TEXT = 'Weight decreased, alarm on, reply with OK to turn off alarm'
 WEIGHT_DIFF_THRESHOLD = 100
@@ -65,6 +68,14 @@ def turn_off_alarm():
     global alarm_on
     alarm_on = False
 
+def set_sms_url(url):
+    if ACCOUNT_SID == '' or AUTH_TOKEN == '':
+        print('Cannot set url, no configuration')
+    else:
+        client = Client(ACCOUNT_SID, AUTH_TOKEN)
+        incoming_phone_number = client.incoming_phone_numbers(TWILIO_PN_SID).fetch()
+        incoming_phone_number.update(sms_url=url)
+
 def send_sms():
     if ACCOUNT_SID == '' or AUTH_TOKEN == '':
         print('Cannot send message, no message configuration')
@@ -99,6 +110,12 @@ def check_sensor():
 #### main program ####
 if __name__ == '__main__':
 
+    #update twilio sms url if necessary
+    if len(sys.argv) > 1:
+        new_url = sys.argv[1]
+        set_sms_url(new_url)
+
+    #load alarm file
     pygame.mixer.init()
     pygame.mixer.music.load(ALARM_FILE_NAME)
 
