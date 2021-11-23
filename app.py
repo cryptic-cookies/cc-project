@@ -1,12 +1,13 @@
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
 from flask import Flask, request
-from apscheduler.schedulers.background import BackgroundScheduler
 
 import os
 import serial
 import pygame
 import sys
+import threading
+import time
 
 def get_env_var(key):
     if key in os.environ:
@@ -54,6 +55,10 @@ def index():
 
 ################### functions ###############
 
+def run_web_server():
+    global app
+    app.run(debug=False, port=5000, host='0.0.0.0', use_reloader=False)
+
 def check_alarm():
     #print('beep beep') 
     global alarm_on
@@ -93,8 +98,6 @@ def read_weight(ser):
     weight = ser.readline().decode('utf-8').rstrip()
     return(weight)
 
-
-
 def check_sensor():
     global alarm_on
     global current_weight
@@ -119,24 +122,21 @@ if __name__ == '__main__':
     pygame.mixer.init()
     pygame.mixer.music.load(ALARM_FILE_NAME)
 
-    try:
-        #start scheduler
-        sched = BackgroundScheduler(daemon=True)
-        #check weight every 3 seconds
-        sched.add_job(check_sensor, 'interval', seconds=3)
-        # check if alarm should be on, current alarm file is 11 sec, so check every 12
-        sched.add_job(check_alarm, 'interval', seconds=12)
-        sched.start()
+    flaskThread = threading.Thread(target=run_web_server)
+    flaskThread.setDaemon(True)
+    flaskThread.start()
 
-   
-    
-        #start web server
-        app.run(debug=False, port=5000, host='0.0.0.0')
+    try:
+        while True:
+            check_sensor()
+            check_alarm()
+            # TODO figure out the optimal interval
+            time.sleep(3) 
 
     except KeyboardInterrupt:
         print('Exiting')
-        sched.shutdown()
         pygame.mixer.quit()
+        exit(0)
 
 
 
