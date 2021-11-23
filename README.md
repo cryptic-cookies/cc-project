@@ -39,4 +39,6 @@ This will update Twilio with the url that will respond to sms messages<br>
 You can also run the program without setting the url:<br>
 <code>python3 app.py</code><br>
 In this case the existing url will be used. So if you stop the program and <b>ngrok</b> is still running, you don't have to set the url when you run the program again<br><br>
-Use Ctrl-C to terminate the program.
+
+<p>You can test that the web server is running by browsing to localhost:5000. It will show the default page with current weight and alarm status. The same page should display if you browe to the ngrok url.</p>
+<p>Use Ctrl-C to terminate the program.</p>
