@@ -9,7 +9,7 @@
 <li>pygame</li>
 </ul>
 </li>
-<li>ngrok  - for responding to messages from Twilio, download from ngrok.io</li>
+<li><b>ngrok</b>  - for responding to messages from Twilio, download from ngrok.io</li>
 
 <h2>Twilio</h2>
 The program uses Twilio to send and receive text messages.
@@ -29,8 +29,8 @@ To run the program from Rasberry Pi, go to terminal<br/>
 cd &lt;directory where the project is&gt;<br>
 if you want Twilio number to receive messages, type:<br>
 <code>./ngrok http 5000</code>
-This will generate a temporary url that look like <code>http://XXXXXXX.ngrok.io
-copy generated ngrok url<br><br>
+This will generate a temporary url that look like <code>http://XXXXXXX.ngrok.io</code><br>
+copy generated <b>ngrok</b> url<br><br>
 in another terminal window or tab, run:<br>
 <code>python3 app.py &lt;generated ngrok url&gt;/message</code>
 this will update Twilio with the url that will repond to sms messages<br>
