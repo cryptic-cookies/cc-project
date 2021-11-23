@@ -14,27 +14,29 @@
 <h2>Twilio</h2>
 The program uses Twilio to send and receive text messages.
 In order for messaging to work, the following environment variables need to be set up in .bashrc file:
-TWILIO_ACCOUNT_SID - credential to log into Twilio account
-TWILIO_AUTH_TOKEN - credential to log into Twilio account
-TWILIO_PHONE_NUMBER - main Twilio phone number used to send messages
-OWNER_PHONE_NUMBER - device user phone number (has to be registered at Twilio as verified phone number)
+<ul>
+  <li>TWILIO_ACCOUNT_SID - credential to log into Twilio account</li>
+  <li>TWILIO_AUTH_TOKEN - credential to log into Twilio account</li>
+<li>TWILIO_PHONE_NUMBER - main Twilio phone number used to send messages</li>
+<li>OWNER_PHONE_NUMBER - device user phone number (has to be registered at Twilio as verified phone number)</li>
+</ul>
 
-At the moment Twilio account is a trial account.
+<p>At the moment Twilio account is a trial account.</p>
 
-To be able to respond to text messages from Twilio phone number, the url mapped to your web server has to be configured in Twilio. 
+<p>To be able to respond to text messages from Twilio phone number, the url mapped to your web server has to be configured in Twilio. </p>
 
 
 <h2>Running the program</h2>
 To run the program from Rasberry Pi, go to terminal<br/>
-cd &lt;directory where the project is&gt;<br>
-if you want Twilio number to receive messages, type:<br>
-<code>./ngrok http 5000</code>
+<code>cd &lt;directory where the project is&gt;</code><br>
+if you want Twilio number to respond to messages, type:<br>
+<code>./ngrok http 5000</code><br>
 This will generate a temporary url that look like <code>http://XXXXXXX.ngrok.io</code><br>
-copy generated <b>ngrok</b> url<br><br>
+Copy generated <b>ngrok</b> url<br>
 in another terminal window or tab, run:<br>
-<code>python3 app.py &lt;generated ngrok url&gt;/message</code>
-this will update Twilio with the url that will repond to sms messages<br>
-you can also run the program without setting the url:
-<code>python3 app.py</code>
-  In this case the existing url will be used. So if you stop the program and <b>ngrok</b> is still running, you don't have to set the url when you run the program again<br><br>
-  Use Ctrl-C to terminate the program.
+<code>python3 app.py &lt;generated ngrok url&gt;/message</code><br>
+This will update Twilio with the url that will respond to sms messages<br>
+You can also run the program without setting the url:<br>
+<code>python3 app.py</code><br>
+In this case the existing url will be used. So if you stop the program and <b>ngrok</b> is still running, you don't have to set the url when you run the program again<br><br>
+Use Ctrl-C to terminate the program.
