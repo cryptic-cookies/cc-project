@@ -233,7 +233,7 @@ if __name__ == '__main__':
             set_lights()
 
             # TODO figure out the optimal interval
-            time.sleep(3) 
+            time.sleep(.37) 
 
     except KeyboardInterrupt:
         print('Exiting')
