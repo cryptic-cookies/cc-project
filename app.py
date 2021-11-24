@@ -143,8 +143,12 @@ def check_sensor():
     global current_weight
     global activated
     global ser
+    global package_on
     
-    new_weight = float(read_weight(ser))
+    try:
+        new_weight = float(read_weight(ser))
+    except:
+        new_weight = current_weight
     print(new_weight)
     if new_weight - current_weight > WEIGHT_DIFF_THRESHOLD:
         package_on = True
