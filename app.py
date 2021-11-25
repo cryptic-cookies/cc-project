@@ -8,8 +8,9 @@ import pygame
 import sys
 import threading
 import time
-##### import RPi.GPIO as GPIO
-##### GPIO.setmode(GPIO.BCM)
+from gpiozero import Button, OutputDevice
+# import RPi.GPIO as GPIO
+# GPIO.setmode(GPIO.BCM)
 
 
 def get_env_var(key):
@@ -30,23 +31,15 @@ WEIGHT_DIFF_THRESHOLD = 100
 OK_RESPONSE_TEXT = 'OK'
 ALARM_FILE_NAME = 'alarm.wav'
 
-
 #globals
 alarm_on = False        # True triggers alarm actions
-scale_connected = True  # True when scale/sensor is connected
 activated = True        # True when package monitoring is active, false when deactivated by button or text.
 package_on = False      # True when package is on scale
 current_weight = 0.0
 app = Flask(__name__)
 
-#if the serial port cannot be opened, assume the scale is not connected
-
-try:
-    ser = serial.Serial('/dev/ttyACM0', 57600, timeout=1)
-except serial.SerialException as e:
-    print("Cannot open serial port.....running in stub mode")
-    scale_connected = False
-
+# open the serial port for reading the scale
+ser = serial.Serial('/dev/ttyACM0', 57600, timeout=1)
 
 #these are the GPIO pins that are used to turn on each of the lights
 
@@ -55,22 +48,11 @@ GREEN_LIGHT = 20
 RED_LIGHT = 21
 BUTTON = 2
 
-##### GPIO.setup(BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-##### GPIO.setup(YELLOW_LIGHT, GPIO.OUT)
-##### GPIO.setup(GREEN_LIGHT, GPIO.OUT)
-##### GPIO.setup(RED_LIGHT, GPIO.OUT)
-
-
-
-
-### IF using GPIOZero instead
-####yellow_light = OutputDevice(YELLOW_LIGHT_PIN, active_high=True, initial_value=False)
-####green_light = OutputDevice(GREEN_LIGHT_PIN, active_high=True, initial_value=False)
-####red_light = OutputDevice(RED_LIGHT_PIN, active_high=True, initial_value=False)
-####button = Button(2)
-
-# You can turn these lights off and on using xxx_light.on() and xxx_light.off()
-
+# using gpiozero 
+yellow_light = OutputDevice(YELLOW_LIGHT, active_high=True, initial_value=False)
+green_light = OutputDevice(GREEN_LIGHT, active_high=True, initial_value=False)
+red_light = OutputDevice(RED_LIGHT, active_high=True, initial_value=False)
+button = Button(2)
 
 #################### webhooks ################
 @app.route('/message', methods=['POST'])
@@ -94,6 +76,7 @@ def index():
 
 ################### functions ###############
 
+
 def run_web_server():
     global app
     app.run(debug=False, port=5000, host='0.0.0.0', use_reloader=False)
@@ -111,7 +94,12 @@ def sound_alarm():
 def turn_off_alarm():
     print ('Turning off alarm...')
     global alarm_on
+    global activated
+    global package_on
+    
     alarm_on = False
+    package_on = False
+    activated = False
 
 def set_sms_url(url):
     if ACCOUNT_SID == '' or AUTH_TOKEN == '':
@@ -131,10 +119,8 @@ def send_sms():
 
 
 def read_weight(ser):
-    print('Reading weight')
     ser.flush()
-    ser.write(b"9")
-    
+    ser.write(b"9")    
     weight = ser.readline().decode('utf-8').rstrip()
     return(weight)
 
@@ -149,60 +135,59 @@ def check_sensor():
         new_weight = float(read_weight(ser))
     except:
         new_weight = current_weight
-    print(new_weight)
-    if new_weight - current_weight > WEIGHT_DIFF_THRESHOLD:
-        package_on = True
 
-    if current_weight - new_weight > WEIGHT_DIFF_THRESHOLD:
-        send_sms() 
-        alarm_on = True
-        package_on = False
+    if activated:
+        if new_weight - current_weight > WEIGHT_DIFF_THRESHOLD:
+            package_on = True
+
+        if current_weight - new_weight > WEIGHT_DIFF_THRESHOLD:
+            #send_sms() 
+            alarm_on = True
+            package_on = False
 
     current_weight = new_weight
-
 
 def set_lights():
     global alarm_on
     global package_on
     global activated
 
-    if package_on: # turn on red light only
-  #      GPIO.output(YELLOW_LIGHT, False)
-  #      GPIO.output(GREEN_LIGHT, False)
-  #      GPIO.output(RED_LIGHT, True)
-        print ("y g R")
-
-    elif not activated: #  turn on yellow only
-#        GPIO.output(YELLOW_LIGHT, True)
-#        GPIO.output(GREEN_LIGHT, False)
-#        GPIO.output(RED_LIGHT, False)
-        print ("Y g r")
+    if not activated: #  turn on yellow only
+        yellow_light.on()
+        green_light.off()
+        red_light.off()
 
     elif alarm_on: # flash red
+        yellow_light.off()
+        green_light.off()
+        red_light.toggle()
 
- #       GPIO.output(YELLOW_LIGHT, False)
- #       GPIO.output(GREEN_LIGHT, False)
- #       GPIO.output(RED_LIGHT, not GPIO.input(RED_LIGHT))
-        print ("y g RRRR")
+    elif package_on: # turn on red light only
+        yellow_light.off()
+        green_light.off()
+        red_light.on()
 
     else: # turn on green only -- ready for package
- #       GPIO.output(YELLOW_LIGHT, False)
- #       GPIO.output(GREEN_LIGHT, True)
- #       GPIO.output(RED_LIGHT, False)
-        print ("y G r")
+        yellow_light.off()
+        green_light.on()
+        red_light.off()
 
+def toggle_activated_state():
+    global activated
+    global alarm_on 
+    global package_on
 
-#this is for the case when a scale is not connected. 
-def stub_sensor():
-    global alarm_on
-    x = input("Trigger Alarm (y/n)? ")
-    if x == "y":
-        alarm_on = True
-        print("ALARM ON")
+    if not activated:
+        activated = True    # activate program
+        alarm_on  = False   # reset alarm if it was on
+        package_on = False  # reset package detection 
+
     else:
+        activated = False   # deactivate everything
         alarm_on = False
-        print("ALARM OFF")
-        
+        package_on = False
+
+
 #### main program ####
 if __name__ == '__main__':
 
@@ -219,27 +204,21 @@ if __name__ == '__main__':
     flaskThread.setDaemon(True)
     flaskThread.start()
 
+    button.when_pressed = toggle_activated_state
+   
     try:
 
         while True:
-
-            # when the button is pressed, the pin input is false
-
-  #          if GPIO.input(BUTTON) == False:     
-  #              activated = not activated              # toggles the activate state
-
-            if scale_connected:
-                check_sensor()
-            else:
-                stub_sensor()
-
-            check_alarm()
+            print('weight: ' + str(current_weight) + ' | activated: ' + str(activated) + ' | package_on: ' + str(package_on) + ' | alarm_on: ' + str(alarm_on))
             set_lights()
-
-            # TODO figure out the optimal interval
-            time.sleep(.37) 
+            check_sensor()
+            check_alarm()
+            time.sleep(.37) # length of alarm wave file
 
     except KeyboardInterrupt:
         print('Exiting')
         pygame.mixer.quit()
+        red_light.off()
+        yellow_light.off()
+        green_light.off()
         exit(0)
