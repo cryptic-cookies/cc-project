@@ -72,7 +72,7 @@ def read_reply_message():
 
 @app.route('/', methods=['GET'])
 def index():
-    return '<h1>Welcome</h1><br/>Current weight: <b>' + str(current_weight) + '</b><br/>Alarm on: ' + str(alarm_on) + '</b><br/>Package On: ' + str(package_on) + '</b><br/>Activated: ' + str(activated) + '</b><br/>Scale Connected: ' + str(scale_connected)
+    return '<h1>Welcome</h1><br/>Current weight: <b>' + str(current_weight) + '</b><br/>Alarm on: ' + str(alarm_on) + '</b><br/>Package On: ' + str(package_on) + '</b><br/>Activated: ' + str(activated)
 
 ################### functions ###############
 
@@ -141,7 +141,7 @@ def check_sensor():
             package_on = True
 
         if current_weight - new_weight > WEIGHT_DIFF_THRESHOLD:
-            #send_sms() 
+            send_sms() 
             alarm_on = True
             package_on = False
 
