@@ -27,6 +27,7 @@ TWILIO_PN_SID = 'PN68a20eb7b497b1ea22d13d1dd5936eea'
 TWILIO_DEFAULT_URL = 'https://demo.twilio.com/welcome/sms/reply/'
 USER_PHONE_NUMBER = get_env_var('OWNER_PHONE_NUMBER') #os.environ['OWNER_PHONE_NUMBER']
 WEIGHT_DECREASED_TEXT = 'Weight decreased, alarm on, reply with OK to turn off alarm'
+PACKAGE_ADDED_TEXT = 'Package detected'
 WEIGHT_DIFF_THRESHOLD = 100
 OK_RESPONSE_TEXT = 'OK'
 ALARM_FILE_NAME = 'alarm.wav'
@@ -109,12 +110,12 @@ def set_sms_url(url):
         incoming_phone_number = client.incoming_phone_numbers(TWILIO_PN_SID).fetch()
         incoming_phone_number.update(sms_url=url)
 
-def send_sms():
+def send_sms(message_text):
     if ACCOUNT_SID == '' or AUTH_TOKEN == '':
         print('Cannot send message, no message configuration')
     else:
         client = Client(ACCOUNT_SID, AUTH_TOKEN)
-        message = client.messages.create(body=WEIGHT_DECREASED_TEXT, from_=TWILIO_PHONE_NUMBER, to=USER_PHONE_NUMBER)
+        message = client.messages.create(body=message_text, from_=TWILIO_PHONE_NUMBER, to=USER_PHONE_NUMBER)
         print('Message sent: ' + message.sid)
 
 
@@ -139,9 +140,10 @@ def check_sensor():
     if activated:
         if new_weight - current_weight > WEIGHT_DIFF_THRESHOLD:
             package_on = True
+            send_sms(PACKAGE_ADDED_TEXT)
 
         if current_weight - new_weight > WEIGHT_DIFF_THRESHOLD:
-            send_sms() 
+            send_sms(WEIGHT_DECREASED_TEXT) 
             alarm_on = True
             package_on = False
 
