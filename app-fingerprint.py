@@ -10,13 +10,9 @@ import threading
 import time
 from gpiozero import Button, OutputDevice
 
-
-############ Fingerprint code start
 import board
 from digitalio import DigitalInOut, Direction
 import adafruit_fingerprint
-############ Fingerprint code end
-
 
 def get_env_var(key):
     if key in os.environ:
@@ -34,14 +30,17 @@ USER_PHONE_NUMBER = get_env_var('OWNER_PHONE_NUMBER') #os.environ['OWNER_PHONE_N
 WEIGHT_DECREASED_TEXT = 'Weight decreased, alarm on, reply with OK to turn off alarm'
 PACKAGE_ADDED_TEXT = 'Package detected'
 WEIGHT_DIFF_THRESHOLD = 100
-OK_RESPONSE_TEXT = 'OK'
+OK_RESPONSE_TEXT = 'Ok'
 ALARM_FILE_NAME = 'alarm.wav'
+ARM_RESPONSE_TEXT = 'Arm'
+DISARM_RESPONSE_TEXT = 'Disarm'
 
 #globals
 alarm_on = False        # True triggers alarm actions
 activated = True        # True when package monitoring is active, false when deactivated by button or text.
 package_on = False      # True when package is on scale
-matched_finger = False     # True when a recognized fingerprint
+matched_finger = False  #True when a finger is detected
+### Add GOBAL HERE
 current_weight = 0.0
 app = Flask(__name__)
 
@@ -76,12 +75,21 @@ def read_reply_message():
     if request.method == 'POST':
         msg_text = request.form.get('Body')
         from_number = request.form.get('From')
-        
+        global activated
+        global alarm_on
+        global package_on
         #here we can add other responses
-        if from_number == USER_PHONE_NUMBER and msg_text == OK_RESPONSE_TEXT:
-            turn_off_alarm()
+        if from_number == USER_PHONE_NUMBER and msg_text == DISARM_RESPONSE_TEXT:
+            activated = False
+            alarm_on = False
             resp = MessagingResponse()
             resp.message('Alarm turned off')
+            return str(resp)
+        if from_number == USER_PHONE_NUMBER and msg_text == ARM_RESPONSE_TEXT:
+            activated = True
+            package_on = False
+            resp = MessagingResponse()
+            resp.message('Alarm turned on')
             return str(resp)
     return 'UNKNOWN'
 
@@ -252,19 +260,24 @@ if __name__ == '__main__':
 
     button.when_pressed = toggle_activated_state
     
+    ### Fingerprint code
     finger.set_led(7,3) # turn on white
     fingerThread = threading.Thread(target=get_fingerprint)
     fingerThread.daemon = True
     fingerThread.start()
-    
+    ### End finger print code
+
     try:
         while True:
               
+            ### Add Fingerprint code here
             if matched_finger == True:
                 toggle_activated_state()
-                matched_finger = False
-            
-            print('wt: ' + str(current_weight) + ' | act: ' + str(activated) + ' | package_on: ' + str(package_on) + ' | alarm_on: ' + str(alarm_on) + ' | fp: ' + str(finger.finger_id) )
+                matched_finger=False
+
+
+
+            print('wt: ' + str(current_weight) + ' | act: ' + str(activated) + ' | package_on: ' + str(package_on) + ' | alarm_on: ' + str(alarm_on) + ' | fp: ' + str(finger.finger_id))
             set_lights()
             check_sensor()
             check_alarm()
@@ -279,5 +292,5 @@ if __name__ == '__main__':
         red_light.off()
         yellow_light.off()
         green_light.off()
-        finger.set_led(1,4) ## fingerprint led off. 4 = off   
+        finger.set_led(0,4)
         exit(0)
